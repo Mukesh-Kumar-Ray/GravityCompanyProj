@@ -1,68 +1,88 @@
-import React, { useState, useEffect } from 'react';
-import AddTodo from './AddTodo';
-import Filter from './Filter';
-import TodoList from './TodoList';
+import React, { useState, useEffect } from "react";
+import AddTodo from "./AddTodo";
+import Filter from "./Filter";
+import TodoList from "./TodoList";
+import axios from "axios";
 
 const TodoApp = () => {
   const [todos, setTodos] = useState([]);
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState("all");
 
   useEffect(() => {
     const fetchTodos = async () => {
-      const res = await fetch('https://dummyjson.com/todos');
-      const data = await res.json();
-      setTodos(data.todos);
-      localStorage.setItem('todos', JSON.stringify(data.todos));
+      try {
+        const response = await axios.get("https://dummyjson.com/todos");
+        //console.log(data);
+        setTodos(response.data.todos);
+        localStorage.setItem("todos", JSON.stringify(response.data.todos));
+      } catch (err) {
+        console.log(err.message);
+      }
     };
     fetchTodos();
   }, []);
-
+  ///these things latter
   useEffect(() => {
-    localStorage.setItem('todos', JSON.stringify(todos));
+    localStorage.setItem("todos", JSON.stringify(todos));
   }, [todos]);
 
   const addTodo = async (text) => {
-    const res = await fetch('https://dummyjson.com/todos/add', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ todo: text, completed: false, userId: 1 }),
-    });
-    const newTodo = await res.json();
-    setTodos([newTodo, ...todos]);
+    try {
+      const response = await axios.post("https://dummyjson.com/todos/add", {
+        todo: text,
+        completed: false,
+        userId: 1,
+      });
+      //  console.log(response)
+      const newTodo = response.data;
+      setTodos([newTodo, ...todos]);
+    } catch (err) {
+      console.log(err.message);
+    }
   };
 
   const toggleTodo = async (id, completed) => {
-    const res = await fetch(`https://dummyjson.com/todos/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ completed: !completed }),
-    });
-    const updated = await res.json();
-    setTodos(todos.map(todo => todo.id === id ? updated : todo));
+    try {
+      const response = await axios.put(`https://dummyjson.com/todos/${id}`, {
+        completed: !completed,
+      });
+      //console.log(response);
+      setTodos(todos.map((todo) => (todo.id === id ? response.data : todo)));
+    } catch (err) {
+      console.log(err.message)
+    }
   };
 
   const deleteTodo = async (id) => {
-    await fetch(`https://dummyjson.com/todos/${id}`, { method: 'DELETE' });
-    setTodos(todos.filter(todo => todo.id !== id));
+    try{
+        const response = await axios.delete(`https://dummyjson.com/todos/${id}`);
+       //console.log(response)  
+       setTodos(todos.filter((todo) => todo.id !== id));
+    }catch(err){
+       console.log(err.message)
+    }
+   
   };
 
-  const filteredTodos = todos.filter(todo => {
-    if (filter === 'completed') return todo.completed;
-    if (filter === 'pending') return !todo.completed;
+  const filteredTodos = todos.filter((todo) => {
+    if (filter === "completed") return todo.completed;
+    if (filter === "pending") return !todo.completed;
     return true;
   });
-  console.log(todos);
+  //console.log(todos);
 
   return (
     <div className="max-w-xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-2xl">
-    <h1 className="text-3xl font-bold text-center text-blue-600 mb-6">To-Do App</h1>
-           <AddTodo addTodo={addTodo} />
-           <Filter filter={filter} setFilter={setFilter} />
-           <TodoList
-                todos={filteredTodos}
-                toggleTodo={toggleTodo}
-                deleteTodo={deleteTodo}
-           />
+      <h1 className="text-3xl font-bold text-center text-blue-600 mb-6">
+        To-Do App
+      </h1>
+      <AddTodo addTodo={addTodo} />
+      <Filter filter={filter} setFilter={setFilter} />
+      <TodoList
+        todos={filteredTodos}
+        toggleTodo={toggleTodo}
+        deleteTodo={deleteTodo}
+      />
     </div>
   );
 };
